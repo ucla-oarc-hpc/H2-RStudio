@@ -4,9 +4,18 @@ Hoffman2 has the ability to run RStudio on the H2 compute nodes.
 
 Hoffman2 has a RStudio containers that can be ran using Apptainer that can be run on a compute node and rendered on the user's local machine
 
+The available RStudio containers on Hoffman2 can be found at
+
+```
+ls $H2_CONTAINER_LOC/h2-rstudio*sif
+```
+
+You can also create your own RStudio containers if you want different versions or install more applications inside the container. The Dockerfiles used to create the RStudio containers on Hoffman2 are located at `https://github.com/ucla-oarc-hpc/hpc_containers`
+ 
 We have a workshop on using RStudio on Hoffman2 for more information
 
 https://github.com/ucla-oarc-hpc/H2HH_rstudio
+
 
 ## Running Rstudio - the long way
 
@@ -111,7 +120,7 @@ Sometimes if RStudio was not exited correctly, a new RStudio session may not sta
 - removing the RStudio tmp directories
 
 ```
-rm -r $SCRATCH/rstudio/tmp
+rm -r $SCRATCH/rstudiotmp
 ```
 
 - clearing out the rstudio config files
