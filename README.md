@@ -49,6 +49,7 @@ apptainer run \
       -B $SCRATCH/rstudiotmp/tmp:/tmp \ 
       $H2_CONTAINER_LOC/h2-rstudio_4.1.0.sif
 ```
+
 This will display some information and a `ssh -L ...` command for you to run on a separate terminal 
 
 This example uses the Rstudio container located at `$H2_CONTAINER_LOC/h2-rstudio_4.1.0.sif`. You can replace this will any RStudio container we have or create your own. Running `ls $H2_CONTAINER_LOC/h2-rstudio*` will display all the RStudio container we currectly have.
@@ -58,6 +59,7 @@ This example uses the Rstudio container located at `$H2_CONTAINER_LOC/h2-rstudio
 
 ```
 ssh  -L 8787:nXXX:8787 username@hoffman2.idre.ucla.edu # Or whatever command was displayed earlier 
+```
 
 6. Then open a web browser and type
 
