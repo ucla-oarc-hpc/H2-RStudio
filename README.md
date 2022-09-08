@@ -112,7 +112,7 @@ Sometimes if RStudio was not exited correctly, a new RStudio session may not sta
 
 ```
 rm -r $SCRATCH/rstudio/tmp
-``
+```
 
 - clearing out the rstudio config files
 
