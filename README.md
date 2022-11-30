@@ -55,8 +55,8 @@ This example uses the RStudio container
 apptainer run \
       -B $SCRATCH/rstudiotmp/var/lib:/var/lib/rstudio-server \
       -B $SCRATCH/rstudiotmp/var/run:/var/run/rstudio-server \
-      -B $SCRATCH/rstudiotmp/tmp:/tmp \ 
-      $H2_CONTAINER_LOC/h2-rstudio_4.1.0.sif
+      -B $SCRATCH/rstudiotmp/tmp:/tmp \
+         $H2_CONTAINER_LOC/h2-rstudio_4.1.0.sif
 ```
 
 This will display some information and a `ssh -L ...` command for you to run on a separate terminal 
@@ -120,13 +120,13 @@ Sometimes if RStudio was not exited correctly, a new RStudio session may not sta
 - removing the RStudio tmp directories
 
 ```
-rm -r $SCRATCH/rstudiotmp
+rm -rf $SCRATCH/rstudiotmp
 ```
 
 - clearing out the rstudio config files
 
 ```
-rm -r ~/.config/rstudio
+rm -rf ~/.config/rstudio
 ```
 
 
