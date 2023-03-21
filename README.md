@@ -11,7 +11,6 @@ module load apptainer
 ls $H2_CONTAINER_LOC/h2-rstudio*sif
 ```
 
-
 To create your own RStudio container or use a different version, visit the [UCLA OARC HPC Containers repository](https://github.com/ucla-oarc-hpc/hpc_containers).
 
 ## RStudio Workshop
@@ -57,6 +56,8 @@ apptainer run \
       -B $SCRATCH/rstudiotmp/tmp:/tmp \
          $H2_CONTAINER_LOC/h2-rstudio_4.1.0.sif
 ```
+
+You can replace `$H2_CONTAINER_LOC/h2-rstudio_4.1.0.sif` with any rstudio version you find from the available RStudio Containers.
 
 This will display information and an `ssh -L ...` command to run in a separate terminal.
 
