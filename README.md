@@ -120,6 +120,7 @@ rm -rf $SCRATCH/rstudiotmp
 
 ```
 rm -rf ~/.config/rstudio
+rm -rf $HOME/.local/share/rstudio
 ```
 
 By following these guidelines and solutions, you should be able to easily run RStudio on Hoffman2 compute nodes and troubleshoot any common issues that may arise.
