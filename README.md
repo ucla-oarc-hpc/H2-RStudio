@@ -123,6 +123,13 @@ Make sure you create the temporay directories again before restarting Rstudio
 rm -rf ~/.config/rstudio
 rm -rf $HOME/.local/share/rstudio
 ```
+3. Check you HOME user quota
+
+If you are at your storage quota limit in your HOME directory, Rstudio may not start correctly. You can check you quota by using the following command
+
+```
+myquota
+```
 
 By following these guidelines and solutions, you should be able to easily run RStudio on Hoffman2 compute nodes and troubleshoot any common issues that may arise.
 
