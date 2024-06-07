@@ -115,6 +115,7 @@ If a new RStudio session doesn't start correctly (e.g., due to an improper exit)
 ```
 rm -rf $SCRATCH/rstudiotmp
 ```
+Make sure you create the temporay directories again before restarting Rstudio
 
 2. **Clear RStudio config files**:
 
