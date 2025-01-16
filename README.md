@@ -115,6 +115,9 @@ If a new RStudio session doesn't start correctly (e.g., due to an improper exit)
 
 ```
 rm -rf $SCRATCH/rstudiotmp
+mkdir -pv $SCRATCH/rstudiotmp/var/lib
+mkdir -pv $SCRATCH/rstudiotmp/var/run
+mkdir -pv $SCRATCH/rstudiotmp/tmp
 ```
 Make sure you create the temporay directories again before restarting Rstudio
 

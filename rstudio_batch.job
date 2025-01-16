@@ -2,20 +2,17 @@
 #$ -cwd
 #$ -o rstudio_batch.out.$JOB_ID
 #$ -j y
-#$ -l h_rt=3:00:00,h_data=5G
+#$ -l h_rt=3:00:00,h_data=10G
 #$ -pe shared 1
 
 # Load the apptainer module
 . /u/local/Modules/default/init/modules.sh
 module load apptainer
 
-# EXPORT R Libs directory
-export R_LIBS_USER=$HOME/R/APPTAINER/h2-rstudio_4.1.0
+# R Version
+export RSTUDIO_VER=4.4.0
 
 # Use the RStudio container to run R code
-#
-# Replace $H2_CONTAINER_LOC/h2-rstudio_4.1.0.sif
-# to whatever RStudio container you want to use
-apptainer exec $H2_CONTAINER_LOC/h2-rstudio_4.1.0.sif R CMD BATCH myRtest.R
+apptainer exec $H2_CONTAINER_LOC/h2-rstudio_${RSTUDIO_VER}.sif R CMD BATCH myRtest.R
 
 
