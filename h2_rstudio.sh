@@ -23,15 +23,16 @@ NOCOLOR='\033[0m'
 usage ()
 {
 echo "
-##	This Script will create a Rstudio session on a compute node on Hoffman2
+##  This Script will create a Rstudio session on a compute node on Hoffman2
 
-	-h       Show this message  
-	OPTIONS:
-	REQUIRED
-	-u [username]   Hoffman2 user name
-	OPTIONAL:
-        -m [MEMORY]       Memory requirments in GB, default 2GB
-	-t [TIME]	Time of RSTUDIO job in HH:MM:SS, default 2:00:00
+        -h              Show this message  
+        OPTIONS:
+        REQUIRED
+        -u [username]   Hoffman2 user name
+        OPTIONAL:
+        -m [MEMORY]     Memory requirements in GB, default 3GB
+        -t [TIME]       Time of RSTUDIO job in HH:MM:SS, default 2:00:00
+        -v [VERSION]    RStudio version (default: 4.1.0)
 "
 exit
 }
@@ -39,41 +40,47 @@ exit
 ## CLEANING UP ##
 function cleaning()
 {
-	if [ -f rstudiotmp ] ; then rm rstudiotmp ; fi
-	exit 1
+        if [ -f rstudiotmp ] ; then rm rstudiotmp ; fi
+        exit 1
 }
 
 
 ## GETTING COMMAND LINE OPTIONS ###
-while getopts ":u:t:m:e:h" options ; do
+while getopts ":u:t:m:e:v:h" options ; do
         case $options in
                 h ) usage; exit ;;
                 u ) H2USERNAME=$OPTARG  ;;
-		t ) JOBTIME=$OPTARG ;;
-		m ) JOBMEM=$OPTARG ;;
-		e ) EXTRA_ARG=$OPTARG ;;
+                t ) JOBTIME=$OPTARG ;;
+                m ) JOBMEM=$OPTARG ;;
+                e ) EXTRA_ARG=$OPTARG ;;
+                v ) RSTUDIO_VERSION=$OPTARG ;;
                 : ) echo "-$OPTARG requires an argument"; usage; exit ;;
                 ? ) echo "-$OPTARG is not an option"; usage ; exit;;
         esac
 done
 
+## If -v wasn't provided, default to 4.1.0
+if [ -z "${RSTUDIO_VERSION}" ] ; then
+  RSTUDIO_VERSION="4.1.0"
+fi
+
 ## CHECK FOR EXPECT ##
 if ! command -v expect &> /dev/null
 then
         echo "You MUST have the expect command installed on your system... Exiting"
-	exit
+        exit
 fi
 
 ## CHECK ARGS ##
 
 ## CHECK USERNAME ##
 if [ -z ${H2USERNAME} ] ; then
-	echo "MUST ENTER Hoffman2 USER NAME"
-	usage
+        echo "MUST ENTER Hoffman2 USER NAME"
+        usage
 fi
 
 ## CHECK MEM ##
-if [ -z ${JOBMEM} ] ; then JOBMEM=3 ; fi
+if [ -z ${JOBMEM} ] ; then JOBMEM=10 ; fi
 
 ## CHECK RUN TIME ##
 if [ -z ${JOBTIME} ] ; then JOBTIME="2:00:00" ; fi
@@ -85,12 +92,13 @@ WALLTIME=`echo "$JOBTIME" | awk -F: '{ print ($1 * 3600) + ($2 * 60) + $3 }'`
 echo "Checking for Hoffman2 password..."
 if ! ssh -o BatchMode=yes "${H2USERNAME}@hoffman2.idre.ucla.edu" true 2>/dev/null; then
         echo "Please enter your Hoffman2 Password for User: ${H2USERNAME}"
-	read -s H2PASSWORD
-else 
-	H2PASSWORD=""
-	PASSWORDLESS="true"
-	PASSWORD_CHECK="true"
+        read -s H2PASSWORD
+else
+        H2PASSWORD=""
+        PASSWORDLESS="true"
+        PASSWORD_CHECK="true"
 fi
+
 if [[ "${PASSWORDLESS}"  != "true" ]] ; then
 PASSWORD_CHECK=false
 expect <<- eof3 > rstudiotmp  
@@ -104,11 +112,11 @@ check_pass=`cat rstudiotmp | grep "Permission denied" | wc -l`
 rm rstudiotmp
 for itr in 1 2 3 ; do
 if [[ "${check_pass}" -ne "0" ]] ; then
-	echo "Incorrect Password: Please enter your Hoffman2 Password for User: ${H2USERNAME}"
-	read -s H2PASSWORD
+        echo "Incorrect Password: Please enter your Hoffman2 Password for User: ${H2USERNAME}"
+        read -s H2PASSWORD
 else
-	PASSWORD_CHECK=true
-	break
+        PASSWORD_CHECK=true
+        break
 fi
 
 expect <<- eof3 > rstudiotmp
@@ -122,8 +130,8 @@ check_pass=`cat rstudiotmp | grep "Permission denied" | wc -l`
 rm rstudiotmp
 done
 if [[ "$PASSWORD_CHECK"  != "true" ]] ; then
-	echo "Password is invaild"
-	exit 1
+        echo "Password is invaild"
+        exit 1
 fi
 fi
 
@@ -134,7 +142,7 @@ sleep 2
 trap cleaning EXIT
 mktmp_cmd=`echo 'mkdir -p \\\${SCRATCH}/rstudiotmp/var/run ; mkdir -p \\\${SCRATCH}/rstudiotmp/var/lib ; mkdir -p \\\${SCRATCH}/rstudiotmp/tmp'`
 
-qrsh_cmd=`echo 'source /u/local/Modules/default/init/modules.sh ; module purge ; module load apptainer ; module list ; echo HOSTNAME ; echo \\\$HOSTNAME ; apptainer run -B \\\$SCRATCH/rstudiotmp/var/lib:/var/lib/rstudio-server -B \\\$SCRATCH/rstudiotmp/var/run:/var/run/rstudio-server -B \\\$SCRATCH/rstudiotmp/tmp:/tmp \\\$H2_CONTAINER_LOC/h2-rstudio_4.1.0.sif'`
+qrsh_cmd=`echo 'source /u/local/Modules/default/init/modules.sh ; module purge ; module load apptainer ; module list ; echo HOSTNAME ; echo \\\$HOSTNAME ; apptainer run -B \\\$SCRATCH/rstudiotmp/var/lib:/var/lib/rstudio-server -B \\\$SCRATCH/rstudiotmp/var/run:/var/run/rstudio-server -B \\\$SCRATCH/rstudiotmp/tmp:/tmp \\\$H2_CONTAINER_LOC/h2-rstudio_'${RSTUDIO_VERSION}'.sif'`
 
 ssh_cmd="echo starting ; ${mktmp_cmd} ; qrsh -N RSTUDIO -l ${EXTRA_ARG}h_data=${JOBMEM}G,h_rt=${JOBTIME} '${qrsh_cmd}'"
 expect <<- eof1 > rstudiotmp  &
@@ -142,10 +150,10 @@ set timeout $WALLTIME
 spawn ssh ${H2USERNAME}@hoffman2.idre.ucla.edu
 expect  {
         "assword:" { send "${H2PASSWORD}\r";exp_continue}
-	send "export PS1='$ '\r"
-	"$ " {send "$env(${ssh_cmd})\r";exp_continue}
-	send "sleep $WALLTIME"
-	expect "$ "
+        send "export PS1='$ '\r"
+        "$ " {send "$env(${ssh_cmd})\r";exp_continue}
+        send "sleep $WALLTIME"
+        expect "$ "
 }
 eof1
   
@@ -153,8 +161,8 @@ eof1
 ## CHECK if SSH WORKED ##
 start_bool=`cat rstudiotmp | grep starting | wc -l`
 while [[ ${start_bool} -eq 0 ]]; do
-	sleep 1
-	start_bool=`cat rstudiotmp | grep starting | wc -l`
+        sleep 1
+        start_bool=`cat rstudiotmp | grep starting | wc -l`
 done 
 
 ## WAITING FOR RSTUDIO TO START ##
@@ -163,19 +171,26 @@ sp="/-\|"
 printf "Waiting for job to start running....."
 while [[ ${out_tmp} -ne 2 ]]
 do 
-	JOBID=`cat rstudiotmp | grep JOBID | awk '{print $2}'`
-	out_tmp=`cat rstudiotmp | grep ssh | wc -l`
-	printf "\b${sp:i++%${#sp}:1}"
-	sleep 1
+        JOBID=`cat rstudiotmp | grep JOBID | awk '{print $2}'`
+        out_tmp=`cat rstudiotmp | grep ssh | wc -l`
+        printf "\b${sp:i++%${#sp}:1}"
+        sleep 1
 done
 
 ### OPEN UP PORT
+#echo ".....Job started!!"
+#echo ""
+#out_tmp2=`cat rstudiotmp | grep ssh |  sed -r "s/\x1B\[([0-9]{1,3}(;[0-9]{1,2})?)?[mGK]//g"`
+#out_port=`grep "running on PORT" rstudiotmp | awk '{print $6}'`
+#out_host=`cat rstudiotmp | awk '/HOSTNAME/{getline; print}' | tail -1 | tr -d $'\r'`
+#out2=`echo "${out_port}:${out_host}:${out_port}"`
+#echo ${out2}
 echo ".....Job started!!"
-echo ""
-out_tmp2=`cat rstudiotmp | grep ssh |  sed -r "s/\x1B\[([0-9]{1,3}(;[0-9]{1,2})?)?[mGK]//g"`
-out_port=`grep "running on PORT" rstudiotmp | awk '{print $7}'`
-out_host=`cat rstudiotmp | awk '/HOSTNAME/{getline; print}' | tail -1 | tr -d $'\r'`
-out2=`echo "${out_port}:${out_host}:${out_port}"`
+out_tmp2=$(cat rstudiotmp | grep ssh | sed -r "s/\x1B\[([0-9]{1,3}(;[0-9]{1,2})?)?[mGK]//g")
+out_port=$(grep "running on PORT" rstudiotmp | awk '{print $6}' | tr -d '\r' | tr -d '\n' | xargs)
+out_host=$(awk '/HOSTNAME/{getline; print $1}' rstudiotmp | tail -1 | tr -d '\r' | tr -d '\n')
+
+out2="${out_port}:${out_host}:${out_port}"
 expect <<- eof2 > /dev/null  &
 set timeout $WALLTIME
 spawn ssh -N -L ${out_port}:${out_host}:${out_port} ${H2USERNAME}@hoffman2.idre.ucla.edu
@@ -184,6 +199,7 @@ spawn ssh -N -L ${out_port}:${out_host}:${out_port} ${H2USERNAME}@hoffman2.idre.
      expect "$ "
 eof2
 
+RSTUDIOPWD=$(grep "Your Rstudio PASSWORD" rstudiotmp | awk '{print $5}' | tr -d '\r' | tr -d '\n' | xargs)
 
 ## CHECK TO SEE IF PORT IS OPEN ##
 port_bool=`lsof -i -P -n | grep LISTEN | grep ${out_port} | wc -l`
@@ -191,17 +207,16 @@ while [[ ${port_bool} -eq 0 ]] ; do port_bool=`lsof -i -P -n | grep LISTEN | gre
 
 ## OPENING UP BROWSER ##
 echo -e $"You can now open your web browser to ${GREEN} http://localhost:${out_port} ${NOCOLOR}"
+echo -e $"Your Rstudio USERNAME is: ${GREEN} ${H2USERNAME} ${NOCOLOR}"
+echo -e $"Your Rstudio PASSWORD is: ${GREEN} ${RSTUDIOPWD} ${NOCOLOR}"
 
 if command -v xdg-open &> /dev/null
 then 
-	xdg-open http://localhost:${out_port}
+        xdg-open http://localhost:${out_port}
 elif command -v open &> /dev/null
 then 
-	open http://localhost:${out_port}
+        open http://localhost:${out_port}
 fi
 
 ### WAITING UNTIL WALLTIME ##
 sleep $WALLTIME
-
-
-
