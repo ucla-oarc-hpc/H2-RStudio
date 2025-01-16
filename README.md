@@ -50,14 +50,16 @@ module load apptainer
 Do not kill this process until you are finished with RStudio.
 
 ```
+export RSTUDIO_VERSION=4.1.0
+
 apptainer run \
       -B $SCRATCH/rstudiotmp/var/lib:/var/lib/rstudio-server \
       -B $SCRATCH/rstudiotmp/var/run:/var/run/rstudio-server \
       -B $SCRATCH/rstudiotmp/tmp:/tmp \
-         $H2_CONTAINER_LOC/h2-rstudio_4.1.0.sif
+         $H2_CONTAINER_LOC/h2-rstudio_${RSTUDIO_VERSION}.sif
 ```
 
-You can replace `$H2_CONTAINER_LOC/h2-rstudio_4.1.0.sif` with any rstudio version you find from the available RStudio Containers.
+You can replace `export RSTUDIO_VERSION=4.1.0` with any Rstudio version available on Hoffman2.
 
 This will display information and an `ssh -L ...` command to run in a separate terminal.
 
@@ -69,7 +71,6 @@ Open a new terminal and run the provided `ssh -L ...` command.
 ssh  -L 8787:nXXX:8787 username@hoffman2.idre.ucla.edu # Or whatever command was displayed earlier 
 ```
 
-
 6. **Access RStudio in your web browser**:
 
 Enter the following URL in your web browser:
@@ -78,6 +79,7 @@ Enter the following URL in your web browser:
 http://localhost:8787 #or whatever port number that was displayed
 ```
 
+You will be asked for your Username and Password. The Username is your Hoffman2 username and the Password was randomly created and displayed in the previous terminal screen.
 
 When finished, exit RStudio and press `[Ctrl-C]` in the terminal running the RStudio container to exit the job.
 
@@ -96,7 +98,6 @@ Use the `h2_rstudio.sh` script on your local machine to automatically set up RSt
 ```
 ./h2_rstudio.sh -u H2USERNAME
 ```
-
 
 This will start RStudio as a `qrsh` job, open a port tunnel, and allow you to access RStudio in your web browser.
 

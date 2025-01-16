@@ -11,32 +11,75 @@
 ## multiple core check
 ##
 
-echo -e $'\e[37;42m@--------------------------------------------------------------------------------------@\e[0m'
-echo -e $'\e[37;42m|                     H O F F M A N 2  -  R S T U D I O                                |\e[0m'
-echo -e $'\e[37;42m@--------------------------------------------------------------------------------------@\e[0m' 
-echo -e $'\E[32m                                                                          ctrl+c to quit \e[0m'
-tput sgr0
-GREEN='\033[0;32m'
+# Function to print the banner
+print_banner() {
+  local RESET=$'\e[0m'
+  local HEADER_BG=$'\e[44;97m'  # White text on blue background
+  local BORDER_BG=$'\e[46;97m'  # White text on cyan background
+  local TEXT_COLOR=$'\e[93m'    # Yellow text
+  local QUIT_MSG=$'\e[31m'      # Red text
 
-NOCOLOR='\033[0m'
+  clear  # Clears the terminal to make it clean
+
+  # Top border
+  echo -e "${BORDER_BG}══════════════════════════════════════════════════════════════════════════════════════${RESET}"
+
+  # Title
+  echo -e "${HEADER_BG}                                HOFFMAN 2 - RSTUDIO                                    ${RESET}"
+
+  # Middle separator
+  echo -e "${BORDER_BG}══════════════════════════════════════════════════════════════════════════════════════${RESET}"
+
+  # Subtext
+  echo -e "${TEXT_COLOR}                      Welcome! Please make sure to follow the usage guidelines.        ${RESET}"
+
+  # Quit message
+  echo -e "${QUIT_MSG}                                                   Press ctrl+c to quit                ${RESET}"
+
+  # Bottom border
+  echo -e "${BORDER_BG}══════════════════════════════════════════════════════════════════════════════════════${RESET}"
+}
+
+# Call the banner function
+print_banner
+tput sgr0
+
+# Capitalized color variables
+CYAN=$'\e[1;36m'
+BLUE=$'\e[1;34m'
+GREEN=$'\e[1;32m'
+YELLOW=$'\e[1;33m'
+WHITE=$'\e[1;37m'
+PURPLE=$'\e[1;35m'
+RESET=$'\e[0m'
 ## USAGE ##
 usage ()
 {
-echo "
-##  This Script will create a Rstudio session on a compute node on Hoffman2
+  echo -e "${CYAN}#######################################################################################${RESET}"
+  echo -e "${BLUE}##                              HOFFMAN2 RSTUDIO USAGE GUIDE                         ##${RESET}"
+  echo -e "${CYAN}#######################################################################################${RESET}"
 
-        -h              Show this message  
-        OPTIONS:
-        REQUIRED
-        -u [username]   Hoffman2 user name
-        OPTIONAL:
-        -m [MEMORY]     Memory requirements in GB, default 3GB
-        -t [TIME]       Time of RSTUDIO job in HH:MM:SS, default 2:00:00
-        -v [VERSION]    RStudio version (default: 4.1.0)
-"
-exit
+  echo -e "\n${GREEN}This script will create an RStudio session on a compute node on Hoffman2.${RESET}\n"
+
+  echo -e "${YELLOW}REQUIRED OPTIONS:${RESET}"
+  echo -e "  ${WHITE}-u${RESET} [username]    Your Hoffman2 username (mandatory)\n"
+
+  echo -e "${YELLOW}OPTIONAL PARAMETERS:${RESET}"
+  echo -e "  ${WHITE}-m${RESET} [MEMORY]     Memory requirements in GB (default: 10 GB)"
+  echo -e "  ${WHITE}-t${RESET} [TIME]       Time of RStudio job in HH:MM:SS (default: 2:00:00)"
+  echo -e "  ${WHITE}-v${RESET} [VERSION]    RStudio version (default: 4.1.0)"
+  echo -e "  ${WHITE}-p${RESET}              Request high-priority queue (highp)"
+  echo -e "  ${WHITE}-g${RESET} [GPUTYPE]    Request GPU resources, where GPUTYPE can be 'V100', 'A100', A6000, etc.\n"
+
+  echo -e "${PURPLE}HELP:${RESET}"
+  echo -e "  ${WHITE}-h${RESET}              Show this usage message\n"
+
+  echo -e "${CYAN}#######################################################################################${RESET}"
+  exit
 }
 
+# Example: Uncomment this to test calling the usage function
+# usage
 ## CLEANING UP ##
 function cleaning()
 {
@@ -46,17 +89,18 @@ function cleaning()
 
 
 ## GETTING COMMAND LINE OPTIONS ###
-while getopts ":u:t:m:e:v:h" options ; do
-        case $options in
-                h ) usage; exit ;;
-                u ) H2USERNAME=$OPTARG  ;;
-                t ) JOBTIME=$OPTARG ;;
-                m ) JOBMEM=$OPTARG ;;
-                e ) EXTRA_ARG=$OPTARG ;;
-                v ) RSTUDIO_VERSION=$OPTARG ;;
-                : ) echo "-$OPTARG requires an argument"; usage; exit ;;
-                ? ) echo "-$OPTARG is not an option"; usage ; exit;;
-        esac
+while getopts ":u:t:m:e:v:g:ph" options ; do
+  case $options in
+    h ) usage; exit ;;               # Show usage guide
+    u ) H2USERNAME=$OPTARG  ;;        # Hoffman2 username
+    t ) JOBTIME=$OPTARG ;;            # Job time
+    m ) JOBMEM=$OPTARG ;;             # Job memory
+    v ) RSTUDIO_VERSION=$OPTARG ;;    # RStudio version
+    p ) HIGHP="TRUE" ;;               # Set high priority (HIGHP) to TRUE
+    g ) GPUTYPE=$OPTARG ;;            # Set GPUTYPE to the specified value
+    : ) echo "-$OPTARG requires an argument"; usage; exit ;;  # Missing argument case
+    ? ) echo "-$OPTARG is not an option"; usage ; exit ;;     # Unknown option case
+  esac
 done
 
 ## If -v wasn't provided, default to 4.1.0
@@ -136,6 +180,15 @@ fi
 fi
 
 ## CHECK EXTRA ARGS ##
+EXTRA_ARG=""
+# Add "highp" if HIGHP is true
+if [[ "$HIGHP" == "TRUE" ]]; then
+  EXTRA_ARG+="highp,"
+fi
+# Add GPU type if GPUTYPE exists
+if [[ -n "$GPUTYPE" ]]; then
+  EXTRA_ARG+="${GPUTYPE},gpu,cuda=1,"
+fi
 
 ## STARING RSTUDIO JOB ##
 sleep 2
@@ -145,6 +198,7 @@ mktmp_cmd=`echo 'mkdir -p \\\${SCRATCH}/rstudiotmp/var/run ; mkdir -p \\\${SCRAT
 qrsh_cmd=`echo 'source /u/local/Modules/default/init/modules.sh ; module purge ; module load apptainer ; module list ; echo HOSTNAME ; echo \\\$HOSTNAME ; apptainer run -B \\\$SCRATCH/rstudiotmp/var/lib:/var/lib/rstudio-server -B \\\$SCRATCH/rstudiotmp/var/run:/var/run/rstudio-server -B \\\$SCRATCH/rstudiotmp/tmp:/tmp \\\$H2_CONTAINER_LOC/h2-rstudio_'${RSTUDIO_VERSION}'.sif'`
 
 ssh_cmd="echo starting ; ${mktmp_cmd} ; qrsh -N RSTUDIO -l ${EXTRA_ARG}h_data=${JOBMEM}G,h_rt=${JOBTIME} '${qrsh_cmd}'"
+
 expect <<- eof1 > rstudiotmp  &
 set timeout $WALLTIME
 spawn ssh ${H2USERNAME}@hoffman2.idre.ucla.edu
@@ -167,25 +221,28 @@ done
 
 ## WAITING FOR RSTUDIO TO START ##
 out_tmp=""
-sp="/-\|"
-printf "Waiting for job to start running....."
+#sp="/-\|"
+#printf "Waiting for job to start running....."
+#while [[ ${out_tmp} -ne 2 ]]
+#do 
+#        JOBID=`cat rstudiotmp | grep JOBID | awk '{print $2}'`
+#        out_tmp=`cat rstudiotmp | grep ssh | wc -l`
+#        printf "\b${sp:i++%${#sp}:1}"
+#        sleep 1
+#done
+spinner=("🔄" "🚀" "🌟" "🔥" "✨" "🌀" "💫")
+printf "Waiting for RStudio to start..."
 while [[ ${out_tmp} -ne 2 ]]
-do 
-        JOBID=`cat rstudiotmp | grep JOBID | awk '{print $2}'`
-        out_tmp=`cat rstudiotmp | grep ssh | wc -l`
-        printf "\b${sp:i++%${#sp}:1}"
-        sleep 1
+do
+  for emoji in "${spinner[@]}"; do
+    printf "\r%s Waiting for Rstudio job to start on Hoffman2..." "$emoji" 
+    out_tmp=`cat rstudiotmp | grep ssh | wc -l`
+    sleep 0.3
+  done
 done
+echo -e "\n🚀 RStudio is now ready!"
 
 ### OPEN UP PORT
-#echo ".....Job started!!"
-#echo ""
-#out_tmp2=`cat rstudiotmp | grep ssh |  sed -r "s/\x1B\[([0-9]{1,3}(;[0-9]{1,2})?)?[mGK]//g"`
-#out_port=`grep "running on PORT" rstudiotmp | awk '{print $6}'`
-#out_host=`cat rstudiotmp | awk '/HOSTNAME/{getline; print}' | tail -1 | tr -d $'\r'`
-#out2=`echo "${out_port}:${out_host}:${out_port}"`
-#echo ${out2}
-echo ".....Job started!!"
 out_tmp2=$(cat rstudiotmp | grep ssh | sed -r "s/\x1B\[([0-9]{1,3}(;[0-9]{1,2})?)?[mGK]//g")
 out_port=$(grep "running on PORT" rstudiotmp | awk '{print $6}' | tr -d '\r' | tr -d '\n' | xargs)
 out_host=$(awk '/HOSTNAME/{getline; print $1}' rstudiotmp | tail -1 | tr -d '\r' | tr -d '\n')
@@ -206,9 +263,9 @@ port_bool=`lsof -i -P -n | grep LISTEN | grep ${out_port} | wc -l`
 while [[ ${port_bool} -eq 0 ]] ; do port_bool=`lsof -i -P -n | grep LISTEN | grep ${out_port} | wc -l` ; sleep 1 ; done
 
 ## OPENING UP BROWSER ##
-echo -e $"You can now open your web browser to ${GREEN} http://localhost:${out_port} ${NOCOLOR}"
-echo -e $"Your Rstudio USERNAME is: ${GREEN} ${H2USERNAME} ${NOCOLOR}"
-echo -e $"Your Rstudio PASSWORD is: ${GREEN} ${RSTUDIOPWD} ${NOCOLOR}"
+echo -e $"You can now open your web browser to ${GREEN} http://localhost:${out_port} ${RESET}"
+echo -e $"Your Rstudio USERNAME is: ${GREEN} ${H2USERNAME} ${RESET}"
+echo -e $"Your Rstudio PASSWORD is: ${GREEN} ${RSTUDIOPWD} ${RESET}"
 
 if command -v xdg-open &> /dev/null
 then 
