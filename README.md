@@ -34,9 +34,7 @@ qrsh -l h_data=10G
 RStudio needs these directories to run correctly. Create them in your `$SCRATCH` directory.
 
 ```
-mkdir -pv $SCRATCH/rstudiotmp/var/lib
-mkdir -pv $SCRATCH/rstudiotmp/var/run
-mkdir -pv $SCRATCH/rstudiotmp/tmp
+mkdir -pv $SCRATCH/rstudiotmp/{var/lib,var/run,tmp}
 ```
 
 3. **Load Apptainer module**:
@@ -134,6 +132,14 @@ If you are at your storage quota limit in your HOME directory, Rstudio may not s
 ```
 myquota
 ```
+
+Running the command
+
+```
+du --max-depth=1 -h $HOME
+```
+
+Can help you find what directories have most of your storage quota
 
 By following these guidelines and solutions, you should be able to easily run RStudio on Hoffman2 compute nodes and troubleshoot any common issues that may arise.
 

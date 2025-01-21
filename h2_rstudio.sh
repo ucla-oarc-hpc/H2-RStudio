@@ -195,7 +195,7 @@ sleep 2
 trap cleaning EXIT
 mktmp_cmd=`echo 'mkdir -p \\\${SCRATCH}/rstudiotmp/var/run ; mkdir -p \\\${SCRATCH}/rstudiotmp/var/lib ; mkdir -p \\\${SCRATCH}/rstudiotmp/tmp'`
 
-qrsh_cmd=`echo 'source /u/local/Modules/default/init/modules.sh ; module purge ; module load apptainer ; module list ; echo HOSTNAME ; echo \\\$HOSTNAME ; apptainer run -B \\\$SCRATCH/rstudiotmp/var/lib:/var/lib/rstudio-server -B \\\$SCRATCH/rstudiotmp/var/run:/var/run/rstudio-server -B \\\$SCRATCH/rstudiotmp/tmp:/tmp \\\$H2_CONTAINER_LOC/h2-rstudio_'${RSTUDIO_VERSION}'.sif'`
+qrsh_cmd=`echo 'source /u/local/Modules/default/init/modules.sh ; module purge ; module load apptainer ; module list ; echo HOSTNAME ; echo \\\$HOSTNAME ; apptainer run --nv -B \\\$SCRATCH/rstudiotmp/var/lib:/var/lib/rstudio-server -B \\\$SCRATCH/rstudiotmp/var/run:/var/run/rstudio-server -B \\\$SCRATCH/rstudiotmp/tmp:/tmp \\\$H2_CONTAINER_LOC/h2-rstudio_'${RSTUDIO_VERSION}'.sif'`
 
 ssh_cmd="echo starting ; ${mktmp_cmd} ; qrsh -N RSTUDIO -l ${EXTRA_ARG}h_data=${JOBMEM}G,h_rt=${JOBTIME} '${qrsh_cmd}'"
 
