@@ -13,6 +13,6 @@ module load apptainer
 export RSTUDIO_VER=4.4.0
 
 # Use the RStudio container to run R code
-apptainer exec $H2_CONTAINER_LOC/h2-rstudio_${RSTUDIO_VER}.sif R CMD BATCH myRtest.R
+apptainer run $H2_CONTAINER_LOC/h2-rstudio_${RSTUDIO_VER}.sif R CMD BATCH myRtest.R
 
 
